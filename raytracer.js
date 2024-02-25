@@ -1,66 +1,63 @@
-var Vector = /** @class */ (function () {
-    function Vector(x, y, z) {
+class Vector {
+    constructor(x, y, z) {
         this.x = x;
         this.y = y;
         this.z = z;
     }
-    Vector.times = function (k, v) { return new Vector(k * v.x, k * v.y, k * v.z); };
-    Vector.minus = function (v1, v2) { return new Vector(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); };
-    Vector.plus = function (v1, v2) { return new Vector(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z); };
-    Vector.dot = function (v1, v2) { return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z; };
-    Vector.mag = function (v) { return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z); };
-    Vector.norm = function (v) {
+    static times(k, v) { return new Vector(k * v.x, k * v.y, k * v.z); }
+    static minus(v1, v2) { return new Vector(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
+    static plus(v1, v2) { return new Vector(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z); }
+    static dot(v1, v2) { return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z; }
+    static mag(v) { return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z); }
+    static norm(v) {
         var mag = Vector.mag(v);
         var div = (mag === 0) ? Infinity : 1.0 / mag;
         return Vector.times(div, v);
-    };
-    Vector.cross = function (v1, v2) {
+    }
+    static cross(v1, v2) {
         return new Vector(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x);
-    };
-    return Vector;
-}());
-var Color = /** @class */ (function () {
-    function Color(r, g, b) {
+    }
+}
+class Color {
+    constructor(r, g, b) {
         this.r = r;
         this.g = g;
         this.b = b;
     }
-    Color.scale = function (k, v) { return new Color(k * v.r, k * v.g, k * v.b); };
-    Color.plus = function (v1, v2) { return new Color(v1.r + v2.r, v1.g + v2.g, v1.b + v2.b); };
-    Color.times = function (v1, v2) { return new Color(v1.r * v2.r, v1.g * v2.g, v1.b * v2.b); };
-    Color.toDrawingColor = function (c) {
-        var legalize = function (d) { return d > 1 ? 1 : d; };
+    static scale(k, v) { return new Color(k * v.r, k * v.g, k * v.b); }
+    static plus(v1, v2) { return new Color(v1.r + v2.r, v1.g + v2.g, v1.b + v2.b); }
+    static times(v1, v2) { return new Color(v1.r * v2.r, v1.g * v2.g, v1.b * v2.b); }
+    static toDrawingColor(c) {
+        var legalize = d => d > 1 ? 1 : d;
         return {
             r: Math.floor(legalize(c.r) * 255),
             g: Math.floor(legalize(c.g) * 255),
             b: Math.floor(legalize(c.b) * 255)
         };
-    };
-    Color.white = new Color(1.0, 1.0, 1.0);
-    Color.grey = new Color(0.5, 0.5, 0.5);
-    Color.black = new Color(0.0, 0.0, 0.0);
-    Color.background = Color.black;
-    Color.defaultColor = Color.black;
-    return Color;
-}());
-var Camera = /** @class */ (function () {
-    function Camera(pos, lookAt) {
+    }
+}
+Color.white = new Color(1.0, 1.0, 1.0);
+Color.grey = new Color(0.5, 0.5, 0.5);
+Color.black = new Color(0.0, 0.0, 0.0);
+Color.background = Color.black;
+Color.defaultColor = Color.black;
+class Camera {
+    constructor(pos, lookAt) {
         this.pos = pos;
         var down = new Vector(0.0, -1.0, 0.0);
         this.forward = Vector.norm(Vector.minus(lookAt, this.pos));
         this.right = Vector.times(1.5, Vector.norm(Vector.cross(this.forward, down)));
         this.up = Vector.times(1.5, Vector.norm(Vector.cross(this.forward, this.right)));
     }
-    return Camera;
-}());
-var Sphere = /** @class */ (function () {
-    function Sphere(center, radius, surface) {
+}
+class Sphere {
+    constructor(center, radius, surface) {
         this.center = center;
         this.surface = surface;
         this.radius2 = radius * radius;
     }
-    Sphere.prototype.normal = function (pos) { return Vector.norm(Vector.minus(pos, this.center)); };
-    Sphere.prototype.intersect = function (ray) {
+    normal(pos) { return Vector.norm(Vector.minus(pos, this.center)); }
+    intersect(ray) {
         var eo = Vector.minus(this.center, ray.start);
         var v = Vector.dot(eo, ray.dir);
         var dist = 0;
@@ -76,11 +73,10 @@ var Sphere = /** @class */ (function () {
         else {
             return { thing: this, ray: ray, dist: dist };
         }
-    };
-    return Sphere;
-}());
-var Plane = /** @class */ (function () {
-    function Plane(norm, offset, surface) {
+    }
+}
+class Plane {
+    constructor(norm, offset, surface) {
         this.surface = surface;
         this.normal = function (pos) { return norm; };
         this.intersect = function (ray) {
@@ -94,8 +90,7 @@ var Plane = /** @class */ (function () {
             }
         };
     }
-    return Plane;
-}());
+}
 var Surfaces;
 (function (Surfaces) {
     Surfaces.shiny = {
@@ -125,11 +120,11 @@ var Surfaces;
         roughness: 150
     };
 })(Surfaces || (Surfaces = {}));
-var RayTracer = /** @class */ (function () {
-    function RayTracer() {
+class RayTracer {
+    constructor() {
         this.maxDepth = 5;
     }
-    RayTracer.prototype.intersections = function (ray, scene) {
+    intersections(ray, scene) {
         var closest = +Infinity;
         var closestInter = undefined;
         for (var i in scene.things) {
@@ -140,8 +135,8 @@ var RayTracer = /** @class */ (function () {
             }
         }
         return closestInter;
-    };
-    RayTracer.prototype.testRay = function (ray, scene) {
+    }
+    testRay(ray, scene) {
         var isect = this.intersections(ray, scene);
         if (isect != null) {
             return isect.dist;
@@ -149,8 +144,8 @@ var RayTracer = /** @class */ (function () {
         else {
             return undefined;
         }
-    };
-    RayTracer.prototype.traceRay = function (ray, scene, depth) {
+    }
+    traceRay(ray, scene, depth) {
         var isect = this.intersections(ray, scene);
         if (isect === undefined) {
             return Color.background;
@@ -158,8 +153,8 @@ var RayTracer = /** @class */ (function () {
         else {
             return this.shade(isect, scene, depth);
         }
-    };
-    RayTracer.prototype.shade = function (isect, scene, depth) {
+    }
+    shade(isect, scene, depth) {
         var d = isect.ray.dir;
         var pos = Vector.plus(Vector.times(isect.dist, d), isect.ray.start);
         var normal = isect.thing.normal(pos);
@@ -167,16 +162,15 @@ var RayTracer = /** @class */ (function () {
         var naturalColor = Color.plus(Color.background, this.getNaturalColor(isect.thing, pos, normal, reflectDir, scene));
         var reflectedColor = (depth >= this.maxDepth) ? Color.grey : this.getReflectionColor(isect.thing, pos, normal, reflectDir, scene, depth);
         return Color.plus(naturalColor, reflectedColor);
-    };
-    RayTracer.prototype.getReflectionColor = function (thing, pos, normal, rd, scene, depth) {
+    }
+    getReflectionColor(thing, pos, normal, rd, scene, depth) {
         return Color.scale(thing.surface.reflect(pos), this.traceRay({ start: pos, dir: rd }, scene, depth + 1));
-    };
-    RayTracer.prototype.getNaturalColor = function (thing, pos, norm, rd, scene) {
-        var _this = this;
-        var addLight = function (col, light) {
+    }
+    getNaturalColor(thing, pos, norm, rd, scene) {
+        var addLight = (col, light) => {
             var ldis = Vector.minus(light.pos, pos);
             var livec = Vector.norm(ldis);
-            var neatIsect = _this.testRay({ start: pos, dir: livec }, scene);
+            var neatIsect = this.testRay({ start: pos, dir: livec }, scene);
             var isInShadow = (neatIsect === undefined) ? false : (neatIsect <= Vector.mag(ldis));
             if (isInShadow) {
                 return col;
@@ -192,11 +186,11 @@ var RayTracer = /** @class */ (function () {
             }
         };
         return scene.lights.reduce(addLight, Color.defaultColor);
-    };
-    RayTracer.prototype.render = function (scene, ctx, screenWidth, screenHeight) {
-        var getPoint = function (x, y, camera) {
-            var recenterX = function (x) { return (x - (screenWidth / 2.0)) / 2.0 / screenWidth; };
-            var recenterY = function (y) { return -(y - (screenHeight / 2.0)) / 2.0 / screenHeight; };
+    }
+    render(scene, ctx, screenWidth, screenHeight) {
+        var getPoint = (x, y, camera) => {
+            var recenterX = x => (x - (screenWidth / 2.0)) / 2.0 / screenWidth;
+            var recenterY = y => -(y - (screenHeight / 2.0)) / 2.0 / screenHeight;
             return Vector.norm(Vector.plus(camera.forward, Vector.plus(Vector.times(recenterX(x), camera.right), Vector.times(recenterY(y), camera.up))));
         };
         for (var y = 0; y < screenHeight; y++) {
@@ -207,9 +201,8 @@ var RayTracer = /** @class */ (function () {
                 ctx.fillRect(x, y, x + 1, y + 1);
             }
         }
-    };
-    return RayTracer;
-}());
+    }
+}
 function defaultScene() {
     return {
         things: [new Plane(new Vector(0.0, 1.0, 0.0), 0.0, Surfaces.checkerboard),
