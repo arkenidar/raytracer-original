@@ -1,4 +1,7 @@
 class Vector {
+    x;
+    y;
+    z;
     constructor(x, y, z) {
         this.x = x;
         this.y = y;
@@ -19,6 +22,9 @@ class Vector {
     }
 }
 class Color {
+    r;
+    g;
+    b;
     constructor(r, g, b) {
         this.r = r;
         this.g = g;
@@ -27,6 +33,11 @@ class Color {
     static scale(k, v) { return new Color(k * v.r, k * v.g, k * v.b); }
     static plus(v1, v2) { return new Color(v1.r + v2.r, v1.g + v2.g, v1.b + v2.b); }
     static times(v1, v2) { return new Color(v1.r * v2.r, v1.g * v2.g, v1.b * v2.b); }
+    static white = new Color(1.0, 1.0, 1.0);
+    static grey = new Color(0.5, 0.5, 0.5);
+    static black = new Color(0.0, 0.0, 0.0);
+    static background = Color.black;
+    static defaultColor = Color.black;
     static toDrawingColor(c) {
         var legalize = d => d > 1 ? 1 : d;
         return {
@@ -36,12 +47,11 @@ class Color {
         };
     }
 }
-Color.white = new Color(1.0, 1.0, 1.0);
-Color.grey = new Color(0.5, 0.5, 0.5);
-Color.black = new Color(0.0, 0.0, 0.0);
-Color.background = Color.black;
-Color.defaultColor = Color.black;
 class Camera {
+    pos;
+    forward;
+    right;
+    up;
     constructor(pos, lookAt) {
         this.pos = pos;
         var down = new Vector(0.0, -1.0, 0.0);
@@ -51,6 +61,9 @@ class Camera {
     }
 }
 class Sphere {
+    center;
+    surface;
+    radius2;
     constructor(center, radius, surface) {
         this.center = center;
         this.surface = surface;
@@ -76,19 +89,36 @@ class Sphere {
     }
 }
 class Plane {
+    surface;
+    #norm;
+    #offset;
+    normal(pos) { return this.#norm; }
     constructor(norm, offset, surface) {
         this.surface = surface;
-        this.normal = function (pos) { return norm; };
-        this.intersect = function (ray) {
+        this.#norm = norm;
+        this.#offset = offset;
+        //this.normal = function(pos: Vector) { return norm; }
+        /*
+        this.intersect = function(ray: Ray): Intersection {
             var denom = Vector.dot(norm, ray.dir);
             if (denom > 0) {
                 return null;
-            }
-            else {
+            } else {
                 var dist = (Vector.dot(norm, ray.start) + offset) / (-denom);
                 return { thing: this, ray: ray, dist: dist };
             }
-        };
+        }
+        */
+    }
+    intersect(ray) {
+        var denom = Vector.dot(this.#norm, ray.dir);
+        if (denom > 0) {
+            return null;
+        }
+        else {
+            var dist = (Vector.dot(this.#norm, ray.start) + this.#offset) / (-denom);
+            return { thing: this, ray: ray, dist: dist };
+        }
     }
 }
 var Surfaces;
@@ -121,9 +151,7 @@ var Surfaces;
     };
 })(Surfaces || (Surfaces = {}));
 class RayTracer {
-    constructor() {
-        this.maxDepth = 5;
-    }
+    maxDepth = 5;
     intersections(ray, scene) {
         var closest = +Infinity;
         var closestInter = undefined;

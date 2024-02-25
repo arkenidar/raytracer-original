@@ -1,8 +1,8 @@
 
 class Vector {
     constructor(public x: number,
-                public y: number,
-                public z: number) {
+        public y: number,
+        public z: number) {
     }
     static times(k: number, v: Vector) { return new Vector(k * v.x, k * v.y, k * v.z); }
     static minus(v1: Vector, v2: Vector) { return new Vector(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
@@ -16,15 +16,15 @@ class Vector {
     }
     static cross(v1: Vector, v2: Vector) {
         return new Vector(v1.y * v2.z - v1.z * v2.y,
-                          v1.z * v2.x - v1.x * v2.z,
-                          v1.x * v2.y - v1.y * v2.x);
+            v1.z * v2.x - v1.x * v2.z,
+            v1.x * v2.y - v1.y * v2.x);
     }
 }
 
 class Color {
     constructor(public r: number,
-                public g: number,
-                public b: number) {
+        public g: number,
+        public b: number) {
     }
     static scale(k: number, v: Color) { return new Color(k * v.r, k * v.g, k * v.b); }
     static plus(v1: Color, v2: Color) { return new Color(v1.r + v2.r, v1.g + v2.g, v1.b + v2.b); }
@@ -118,10 +118,14 @@ class Sphere implements Thing {
 }
 
 class Plane implements Thing {
-    public normal: (pos: Vector) =>Vector;
-    public intersect: (ray: Ray) =>Intersection;
+    #norm: Vector;
+    #offset: number;
+    normal(pos: Vector): Vector { return this.#norm; }
     constructor(norm: Vector, offset: number, public surface: Surface) {
-        this.normal = function(pos: Vector) { return norm; }
+        this.#norm = norm;
+        this.#offset = offset;
+        //this.normal = function(pos: Vector) { return norm; }
+        /*
         this.intersect = function(ray: Ray): Intersection {
             var denom = Vector.dot(norm, ray.dir);
             if (denom > 0) {
@@ -131,26 +135,36 @@ class Plane implements Thing {
                 return { thing: this, ray: ray, dist: dist };
             }
         }
+        */
+    }
+    intersect(ray: Ray): Intersection {
+        var denom = Vector.dot(this.#norm, ray.dir);
+        if (denom > 0) {
+            return null;
+        } else {
+            var dist = (Vector.dot(this.#norm, ray.start) + this.#offset) / (-denom);
+            return { thing: this, ray: ray, dist: dist };
+        }
     }
 }
 
 module Surfaces {
     export var shiny: Surface = {
-        diffuse: function(pos) { return Color.white; },
-        specular: function(pos) { return Color.grey; },
-        reflect: function(pos) { return 0.7; },
+        diffuse: function (pos) { return Color.white; },
+        specular: function (pos) { return Color.grey; },
+        reflect: function (pos) { return 0.7; },
         roughness: 250
     }
     export var checkerboard: Surface = {
-        diffuse: function(pos) {
+        diffuse: function (pos) {
             if ((Math.floor(pos.z) + Math.floor(pos.x)) % 2 !== 0) {
                 return Color.white;
             } else {
                 return Color.black;
             }
         },
-        specular: function(pos) { return Color.white; },
-        reflect: function(pos) {
+        specular: function (pos) { return Color.white; },
+        reflect: function (pos) {
             if ((Math.floor(pos.z) + Math.floor(pos.x)) % 2 !== 0) {
                 return 0.1;
             } else {
@@ -202,7 +216,7 @@ class RayTracer {
         var normal = isect.thing.normal(pos);
         var reflectDir = Vector.minus(d, Vector.times(2, Vector.times(Vector.dot(normal, d), normal)));
         var naturalColor = Color.plus(Color.background,
-                                      this.getNaturalColor(isect.thing, pos, normal, reflectDir, scene));
+            this.getNaturalColor(isect.thing, pos, normal, reflectDir, scene));
         var reflectedColor = (depth >= this.maxDepth) ? Color.grey : this.getReflectionColor(isect.thing, pos, normal, reflectDir, scene, depth);
         return Color.plus(naturalColor, reflectedColor);
     }
@@ -222,12 +236,12 @@ class RayTracer {
             } else {
                 var illum = Vector.dot(livec, norm);
                 var lcolor = (illum > 0) ? Color.scale(illum, light.color)
-                                          : Color.defaultColor;
+                    : Color.defaultColor;
                 var specular = Vector.dot(livec, Vector.norm(rd));
                 var scolor = (specular > 0) ? Color.scale(Math.pow(specular, thing.surface.roughness), light.color)
-                                          : Color.defaultColor;
+                    : Color.defaultColor;
                 return Color.plus(col, Color.plus(Color.times(thing.surface.diffuse(pos), lcolor),
-                                                  Color.times(thing.surface.specular(pos), scolor)));
+                    Color.times(thing.surface.specular(pos), scolor)));
             }
         }
         return scene.lights.reduce(addLight, Color.defaultColor);
@@ -235,7 +249,7 @@ class RayTracer {
 
     render(scene, ctx, screenWidth, screenHeight) {
         var getPoint = (x, y, camera) => {
-            var recenterX = x =>(x - (screenWidth / 2.0)) / 2.0 / screenWidth;
+            var recenterX = x => (x - (screenWidth / 2.0)) / 2.0 / screenWidth;
             var recenterY = y => - (y - (screenHeight / 2.0)) / 2.0 / screenHeight;
             return Vector.norm(Vector.plus(camera.forward, Vector.plus(Vector.times(recenterX(x), camera.right), Vector.times(recenterY(y), camera.up))));
         }
@@ -254,12 +268,12 @@ class RayTracer {
 function defaultScene(): Scene {
     return {
         things: [new Plane(new Vector(0.0, 1.0, 0.0), 0.0, Surfaces.checkerboard),
-                 new Sphere(new Vector(0.0, 1.0, -0.25), 1.0, Surfaces.shiny),
-                 new Sphere(new Vector(-1.0, 0.5, 1.5), 0.5, Surfaces.shiny)],
+        new Sphere(new Vector(0.0, 1.0, -0.25), 1.0, Surfaces.shiny),
+        new Sphere(new Vector(-1.0, 0.5, 1.5), 0.5, Surfaces.shiny)],
         lights: [{ pos: new Vector(-2.0, 2.5, 0.0), color: new Color(0.49, 0.07, 0.07) },
-                 { pos: new Vector(1.5, 2.5, 1.5), color: new Color(0.07, 0.07, 0.49) },
-                 { pos: new Vector(1.5, 2.5, -1.5), color: new Color(0.07, 0.49, 0.071) },
-                 { pos: new Vector(0.0, 3.5, 0.0), color: new Color(0.21, 0.21, 0.35) }],
+        { pos: new Vector(1.5, 2.5, 1.5), color: new Color(0.07, 0.07, 0.49) },
+        { pos: new Vector(1.5, 2.5, -1.5), color: new Color(0.07, 0.49, 0.071) },
+        { pos: new Vector(0.0, 3.5, 0.0), color: new Color(0.21, 0.21, 0.35) }],
         camera: new Camera(new Vector(3.0, 2.0, 4.0), new Vector(-1.0, 0.5, 0.0))
     };
 }
