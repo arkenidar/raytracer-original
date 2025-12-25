@@ -1,3 +1,7 @@
+
+quick link to live demo : ( requires a "JS+HTML" WWW-Browser )
+https://arkenidar.github.io/raytracer-original/raytracer.html
+
 ===== TypeScript Sample: Raytracer =====
 
 https://github.com/microsoft/TypeScriptSamples
